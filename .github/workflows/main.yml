@@ -23,16 +23,20 @@ jobs:
       - name: Install dependencies
         run: pip install yfinance requests pandas
 
-      - name: Run auto-discovery and results updater
+      - name: Run auto-update with alerts
         run: python auto_update.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
+          WHATSAPP_API_KEY: ${{ secrets.WHATSAPP_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASS: ${{ secrets.GMAIL_APP_PASS }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
 
       - name: Commit and push changes
-       - name: Commit and push changes
         run: |
-          git config --global user.name  "NSE Watchlist Bot"
+          git config --global user.name "NSE Watchlist Bot"
           git config --global user.email "bot@nse-watchlist.com"
           git pull --rebase origin main
           git add data.py
