@@ -282,12 +282,12 @@ if page == "🏠 Dashboard":
         st.markdown(f"""
         <div class="today-banner">
           <b>🔔 RESULTS TODAY — {TODAY.strftime('%d %b %Y')}</b><br>
-          {"  |  ".join(f"<b>{s['name']}</b> (Est. EPS ₹{s.get('est_eps','—')})" for s in results_today)}
+          {"  |  ".join(f"<b>{s['name']}</b> (Est. EPS ₹{s.get('est_eps',0):.2f})" for s in results_today)}
         </div>""", unsafe_allow_html=True)
 
     if results_tmrw:
         st.info(f"📅 **Tomorrow's Results:** " +
-                " | ".join(f"**{s['name']}** (Est. ₹{s.get('est_eps','—')})" for s in results_tmrw))
+                " | ".join(f"**{s['name']}** (Est. ₹{s.get('est_eps',0):.2f})" for s in results_tmrw))
 
     # ── #2 Action Required ────────────────────────────────────────────────────
     needs_action=[]
@@ -418,7 +418,7 @@ elif page == "📈 Pre-Result Setup":
         score=watchlist_score(s)
         with st.expander(f"**{s['name']}** | 📅 {s['result_date']}{days_str} | Score: {score}/10"):
             c1,c2,c3,c4=st.columns(4)
-            c1.metric("Est. EPS",f"₹{s.get('est_eps','—')}")
+            c1.metric("Est. EPS",(f"₹{s['est_eps']:.2f}" if isinstance(s.get('est_eps'),(int,float)) else '₹—'))
             c2.metric("Est. Rev",f"₹{s.get('est_rev','—'):,}Cr" if s.get('est_rev') else "—")
             c3.metric("SS Target",f"₹{s.get('ss_target','—')}")
             c4.metric("Score",f"{score}/10")
@@ -449,13 +449,14 @@ elif page == "🎯 Post-Result Tracker":
         rev_b=None
         if s.get("act_rev") and s.get("est_rev") and s["est_rev"]!=0:
             rev_b=(s["act_rev"]-s["est_rev"])/abs(s["est_rev"])*100
+        eps_str = f"₹{s['act_eps']:.2f}" if isinstance(s.get('act_eps'),(int,float)) else "₹—"
         label=(f"**{s['name']}** | {s['result_date']} | "
-               f"EPS ₹{s.get('act_eps','—')} "
+               f"EPS {eps_str} "
                f"({'✅ BEAT' if eps_b and eps_b>0 else '❌ MISS'} {f'{eps_b:+.1f}%' if eps_b else ''})")
         with st.expander(label):
             c1,c2,c3,c4,c5=st.columns(5)
-            c1.metric("Est. EPS",f"₹{s.get('est_eps','—')}")
-            c2.metric("Act. EPS",f"₹{s.get('act_eps','—')}",f"{eps_b:+.1f}%" if eps_b else None)
+            c1.metric("Est. EPS",(f"₹{s['est_eps']:.2f}" if isinstance(s.get('est_eps'),(int,float)) else '₹—'))
+            c2.metric("Act. EPS",(f"₹{s['act_eps']:.2f}" if isinstance(s.get('act_eps'),(int,float)) else '₹—'),f"{eps_b:+.1f}%" if eps_b else None)
             c3.metric("Est. Rev",f"₹{s.get('est_rev','—'):,}Cr" if s.get('est_rev') else "—")
             c4.metric("Act. Rev",f"₹{s.get('act_rev','—'):,}Cr" if s.get('act_rev') else "—",f"{rev_b:+.1f}%" if rev_b else None)
             c5.metric("Upside",s.get("upside_captured") or "—")
@@ -682,8 +683,8 @@ elif page == "🔬 Stock Deep Dive":
     col_a,col_b=st.columns(2)
     with col_a:
         st.markdown("#### 📊 Estimates vs Actuals")
-        dr=[("Est. EPS",f"₹{s.get('est_eps','—')}"),
-            ("Actual EPS",f"₹{s.get('act_eps','—')}" if s.get('act_eps') else "Pending"),
+        dr=[("Est. EPS",(f"₹{s['est_eps']:.2f}" if isinstance(s.get('est_eps'),(int,float)) else '₹—')),
+            ("Actual EPS",(f"₹{s['act_eps']:.2f}" if isinstance(s.get('act_eps'),(int,float)) else '₹—') if s.get('act_eps') else "Pending"),
             ("Est. Rev",f"₹{s.get('est_rev','—'):,}Cr" if s.get('est_rev') else "—"),
             ("Actual Rev",f"₹{s.get('act_rev','—'):,}Cr" if s.get('act_rev') else "Pending"),
             ("Sell-Side Target",f"₹{s.get('ss_target','—')}"),
@@ -781,9 +782,9 @@ elif page == "🔬 Stock Deep Dive":
 # ─────────────────────────────────────────────────────────────────────────────
 elif page == "📸 Instagram Export":
     st.markdown("## 📸 Instagram Export")
-    st.caption("Generate shareable visuals for @that_human_from_mars")
+    st.caption("One-click cards for @that_human_from_mars")
 
-    tab1,tab2,tab3,tab4=st.tabs(["🏆 Season Scorecard","📊 Top BUY Calls","🎯 Beat/Miss Report","✍️ Custom Caption"])
+    import streamlit.components.v1 as components
 
     declared=[s for s in STOCKS if s["status"]=="Declared"]
     beats=[s for s in declared if s.get("act_eps") and s.get("est_eps") and s["act_eps"]>s["est_eps"]]
@@ -793,194 +794,148 @@ elif page == "📸 Instagram Export":
     portfolio_ret=sum(r["ret_pct"] for r in buy_rows)/max(len(buy_rows),1)*100
     hit_rate=sum(1 for r in buy_rows if r["ret_pct"]>=0)/max(len(buy_rows),1)*100
 
-    with tab1:
-        st.markdown("### Season Scorecard Visual")
-        st.markdown(f"""
-        <div style="background:linear-gradient(135deg,#0D1B2A 0%,#1A3A5C 100%);
-                    border-radius:20px;padding:32px;color:white;max-width:500px;
-                    font-family:Inter,sans-serif">
-          <div style="font-size:13px;color:#94A3B8;letter-spacing:2px;text-transform:uppercase">
-            @that_human_from_mars
-          </div>
-          <div style="font-size:26px;font-weight:700;margin:12px 0 4px">
-            Q4 FY26 Results Season
-          </div>
-          <div style="font-size:14px;color:#94A3B8;margin-bottom:24px">
-            My Watchlist Performance Report
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
-            <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
-              <div style="font-size:32px;font-weight:700;color:#4ADE80">{portfolio_ret:+.1f}%</div>
-              <div style="font-size:12px;color:#94A3B8">Avg Portfolio Return</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
-              <div style="font-size:32px;font-weight:700;color:#60A5FA">{hit_rate:.0f}%</div>
-              <div style="font-size:12px;color:#94A3B8">Hit Rate</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
-              <div style="font-size:32px;font-weight:700;color:#F472B6">{len(declared)}</div>
-              <div style="font-size:12px;color:#94A3B8">Results Tracked</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
-              <div style="font-size:32px;font-weight:700;color:#FBBF24">{len(beats)}/{len(declared)}</div>
-              <div style="font-size:12px;color:#94A3B8">Beats / Total</div>
-            </div>
-          </div>
-          <div style="background:rgba(64,145,108,0.2);border-radius:10px;padding:14px;margin-bottom:16px">
-            <div style="font-size:12px;color:#4ADE80;font-weight:600;margin-bottom:8px">🏆 TOP CALL THIS SEASON</div>
-            <div style="font-size:18px;font-weight:700">{top5[0]['name'] if top5 else '—'}</div>
-            <div style="font-size:24px;font-weight:700;color:#4ADE80">{top5[0]['ret_pct']*100:+.1f}%</div>
-          </div>
-          <div style="font-size:11px;color:#64748B;text-align:center">
-            ⚠️ Not SEBI-registered advice. Educational only.
-          </div>
+    # ── Card 1: Season Scorecard ─────────────────────────────────────────────
+    st.markdown("### 🏆 Season Scorecard")
+    components.html(f"""
+    <div style="background:linear-gradient(135deg,#0D1B2A 0%,#1A3A5C 100%);
+                border-radius:20px;padding:32px;color:white;max-width:480px;font-family:Arial,sans-serif">
+      <div style="font-size:12px;color:#94A3B8;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">
+        @that_human_from_mars | Q4 FY26
+      </div>
+      <div style="font-size:24px;font-weight:700;margin-bottom:20px">My Results Season Report 📊</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:30px;font-weight:700;color:#4ADE80">{portfolio_ret:+.1f}%</div>
+          <div style="font-size:11px;color:#94A3B8">Avg Portfolio Return</div>
         </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("---")
-        caption_1=(
-            f"📊 Q4 FY26 Results Season — My Watchlist Report 🎯\n\n"
-            f"✅ {len(declared)} results tracked\n"
-            f"📈 Avg portfolio return: {portfolio_ret:+.1f}% in ~4 weeks\n"
-            f"🎯 Hit rate: {hit_rate:.0f}% of BUY calls positive\n"
-            f"🏆 Best call: {top5[0]['name'] if top5 else '—'} ({top5[0]['ret_pct']*100:+.1f}% if top5 else '')\n\n"
-            f"Full watchlist & analysis 👇\n"
-            f"🔗 nse-watchlist-that_human_from_mars.streamlit.app\n\n"
-            f"#StockMarket #Investing #NSE #Q4Results #PersonalFinance "
-            f"#IndianStocks #ResultsSeason #StockAnalysis #thathumanfrommars"
-        )
-        st.text_area("📋 Copy this caption:", caption_1, height=220)
-
-    with tab2:
-        st.markdown("### Top BUY Calls Visual")
-        top8=sorted(buy_rows,key=lambda x:-x["ret_pct"])[:8]
-        rows_html=""
-        for r in top8:
-            color="#4ADE80" if r["ret_pct"]>=0 else "#F87171"
-            rows_html+=f"""
-            <div style="display:flex;justify-content:space-between;align-items:center;
-                        padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
-              <div>
-                <span style="font-weight:600;font-size:14px">{r['name']}</span>
-                <span style="font-size:11px;color:#94A3B8;margin-left:8px">{r['rating']}</span>
-              </div>
-              <span style="font-weight:700;font-size:18px;color:{color}">{r['ret_pct']*100:+.1f}%</span>
-            </div>"""
-
-        import streamlit.components.v1 as components
-        components.html(f"""
-        <div style="background:linear-gradient(135deg,#0D1B2A,#1A3A5C);
-                    border-radius:20px;padding:28px;color:white;max-width:500px;
-                    font-family:Inter,sans-serif">
-          <div style="font-size:12px;color:#94A3B8;letter-spacing:2px;margin-bottom:4px">
-            @that_human_from_mars | Q4 FY26
-          </div>
-          <div style="font-size:22px;font-weight:700;margin-bottom:4px">Top BUY Calls 🚀</div>
-          <div style="font-size:13px;color:#94A3B8;margin-bottom:20px">
-            Returns since recommendation date
-          </div>
-          {rows_html}
-          <div style="font-size:11px;color:#64748B;margin-top:16px;text-align:center">
-            ⚠️ Past returns ≠ future performance. Not SEBI advice.
-          </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:30px;font-weight:700;color:#60A5FA">{hit_rate:.0f}%</div>
+          <div style="font-size:11px;color:#94A3B8">Hit Rate</div>
         </div>
-        """, height=500, scrolling=True)
-
-        caption_2=(
-            f"🚀 My Top BUY Calls — Q4 FY26 Results Season\n\n"
-            +"\n".join(f"{'✅' if r['ret_pct']>=0 else '❌'} #{r['name'].replace(' ','')}: {r['ret_pct']*100:+.1f}%" for r in top8)
-            +f"\n\nHit rate: {hit_rate:.0f}% | ~4 week holding period\n\n"
-            f"I track 84 stocks every results season with independent ratings.\n"
-            f"Full dashboard 👇 nse-watchlist-that_human_from_mars.streamlit.app\n\n"
-            f"#StockMarket #NSEIndia #BuyStocks #ResultsSeason "
-            f"#StockAnalysis #IndianStocks #Investing #PersonalFinance"
-        )
-        st.text_area("📋 Copy this caption:", caption_2, height=260)
-
-    with tab3:
-        st.markdown("### Beat/Miss Report Visual")
-        sector_beats={}
-        for s in declared:
-            if s.get("act_eps") and s.get("est_eps"):
-                sec=s["sector"].split("(")[0].strip().split("/")[0].strip()[:18]
-                sector_beats.setdefault(sec,{"beats":0,"total":0})
-                sector_beats[sec]["total"]+=1
-                if s["act_eps"]>s["est_eps"]: sector_beats[sec]["beats"]+=1
-        top_sectors=sorted(sector_beats.items(),key=lambda x:-x[1]["beats"]/max(x[1]["total"],1))[:6]
-
-        sec_html=""
-        for sec,(data) in top_sectors:
-            rate=data["beats"]/data["total"]*100
-            color="#4ADE80" if rate>=70 else ("#FBBF24" if rate>=50 else "#F87171")
-            bar_width=int(rate)
-            sec_html+=f"""
-            <div style="margin-bottom:14px">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                <span style="font-size:13px;font-weight:500">{sec}</span>
-                <span style="font-size:13px;font-weight:700;color:{color}">{rate:.0f}%</span>
-              </div>
-              <div style="background:rgba(255,255,255,0.1);border-radius:999px;height:8px">
-                <div style="background:{color};width:{bar_width}%;height:8px;border-radius:999px"></div>
-              </div>
-              <span style="font-size:11px;color:#94A3B8">{data['beats']}/{data['total']} beat</span>
-            </div>"""
-
-        components.html(f"""
-        <div style="background:linear-gradient(135deg,#0D1B2A,#2D1B5C);
-                    border-radius:20px;padding:28px;color:white;max-width:500px;
-                    font-family:Inter,sans-serif">
-          <div style="font-size:12px;color:#94A3B8;letter-spacing:2px;margin-bottom:4px">
-            @that_human_from_mars | Q4 FY26
-          </div>
-          <div style="font-size:22px;font-weight:700;margin-bottom:4px">Sector Beat Rate 📊</div>
-          <div style="font-size:13px;color:#94A3B8;margin-bottom:20px">
-            Which sectors crushed estimates?
-          </div>
-          {sec_html}
-          <div style="font-size:11px;color:#64748B;margin-top:8px;text-align:center">
-            {len(beats)}/{len(declared)} stocks beat estimates overall
-          </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:30px;font-weight:700;color:#F472B6">{len(declared)}</div>
+          <div style="font-size:11px;color:#94A3B8">Results Tracked</div>
         </div>
-        """, height=500, scrolling=True)
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:30px;font-weight:700;color:#FBBF24">{len(beats)}/{len(declared)}</div>
+          <div style="font-size:11px;color:#94A3B8">Beat Estimates</div>
+        </div>
+      </div>
+      <div style="background:rgba(64,145,108,0.25);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:11px;color:#4ADE80;font-weight:600;margin-bottom:4px">🏆 BEST CALL THIS SEASON</div>
+        <div style="font-size:18px;font-weight:700">{top5[0]["name"] if top5 else "—"}</div>
+        <div style="font-size:22px;font-weight:700;color:#4ADE80">{top5[0]["ret_pct"]*100:+.1f}%</div>
+      </div>
+      <div style="font-size:10px;color:#64748B;text-align:center">⚠️ Not SEBI-registered advice. Educational only.</div>
+    </div>
+    """, height=420, scrolling=False)
 
-        caption_3=(
-            f"📊 Q4 FY26: Which Sectors Crushed Estimates?\n\n"
-            +"\n".join(f"{'🟢' if data['beats']/data['total']>=0.7 else '🟡' if data['beats']/data['total']>=0.5 else '🔴'} {sec}: {data['beats']/data['total']*100:.0f}% beat rate" for sec,data in top_sectors)
-            +f"\n\nOverall: {len(beats)}/{len(declared)} companies beat estimates\n\n"
-            f"I track 84 NSE stocks every quarter with independent ratings.\n"
-            f"#Q4FY26Results #NSE #SectorAnalysis #EarningsSeason "
-            f"#IndianStocks #StockMarket #thathumanfrommars"
-        )
-        st.text_area("📋 Copy this caption:", caption_3, height=220)
+    caption1 = (f"📊 Q4 FY26 Season Report\n\n"
+                f"✅ {len(declared)} results tracked\n"
+                f"📈 Avg return: {portfolio_ret:+.1f}% in ~4 weeks\n"
+                f"🎯 Hit rate: {hit_rate:.0f}%\n"
+                f"🏆 Best call: #{(top5[0]['name'] if top5 else '').replace(' ','')} ({top5[0]['ret_pct']*100:+.1f}% if top5 else '')\n\n"
+                f"Full analysis 👇 nse-watchlist-james.streamlit.app\n\n"
+                f"#StockMarket #NSE #Q4Results #PersonalFinance #IndianStocks #thathumanfrommars")
+    st.code(caption1, language=None)
+    st.markdown("👆 Copy caption above | Screenshot the card | Post on Instagram")
 
-    with tab4:
-        st.markdown("### Custom Caption Generator")
-        stock_name=st.selectbox("Select a stock for custom post",
-                                 [s["name"] for s in STOCKS if s["status"]=="Declared"])
-        stock=next((x for x in STOCKS if x["name"]==stock_name),None)
-        if stock:
-            eps_b=""
-            if stock.get("act_eps") and stock.get("est_eps") and stock["est_eps"]!=0:
-                b=(stock["act_eps"]-stock["est_eps"])/abs(stock["est_eps"])*100
-                eps_b=f"\n📊 EPS: ₹{stock['act_eps']} vs est ₹{stock['est_eps']} ({b:+.1f}% {'BEAT ✅' if b>0 else 'MISS ❌'})"
+    st.markdown("---")
 
-            custom_cap=(
-                f"{'🟢' if stock['ind_rating'] in ('STRONG BUY','BUY','ACCUMULATE') else '🟡' if stock['ind_rating']=='HOLD' else '🔴'} "
-                f"#{stock_name.replace(' ','')} Q4 FY26 Results\n"
-                f"{eps_b}\n\n"
-                f"My Rating: {stock['ind_rating']} | Risk: {stock['risk']}\n\n"
-                f"📌 {stock.get('catalyst','')[:150]}\n\n"
-                f"Full analysis 👇 nse-watchlist-that_human_from_mars.streamlit.app\n\n"
-                f"#NSE #{stock_name.replace(' ','')} #Q4Results #StockAnalysis "
-                f"#IndianStocks #PersonalFinance #thathumanfrommars"
-            )
-            st.text_area("📋 Caption ready to copy:", custom_cap, height=240)
-            wa_url="https://wa.me/?text="+urllib.parse.quote(custom_cap)
-            st.markdown(f'<a href="{wa_url}" target="_blank" style="background:#25D366;color:white;padding:8px 20px;border-radius:6px;text-decoration:none;font-weight:600">📲 Share via WhatsApp</a>', unsafe_allow_html=True)
+    # ── Card 2: Top BUY Calls ─────────────────────────────────────────────────
+    st.markdown("### 🚀 Top BUY Calls")
+    top8 = sorted(buy_rows, key=lambda x: -x["ret_pct"])[:8]
+    rows_html = "".join(f"""
+      <div style="display:flex;justify-content:space-between;align-items:center;
+                  padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+        <div><span style="font-weight:600;font-size:13px">{r["name"]}</span>
+             <span style="font-size:10px;color:#94A3B8;margin-left:6px">{r["rating"]}</span></div>
+        <span style="font-weight:700;font-size:16px;color:{"#4ADE80" if r["ret_pct"]>=0 else "#F87171"}">{r["ret_pct"]*100:+.1f}%</span>
+      </div>""" for r in top8)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# LIVE PRICES
-# ─────────────────────────────────────────────────────────────────────────────
+    components.html(f"""
+    <div style="background:linear-gradient(135deg,#0D1B2A,#1A3A5C);
+                border-radius:20px;padding:26px;color:white;max-width:480px;font-family:Arial,sans-serif">
+      <div style="font-size:12px;color:#94A3B8;margin-bottom:6px">@that_human_from_mars | Q4 FY26</div>
+      <div style="font-size:22px;font-weight:700;margin-bottom:4px">Top BUY Calls 🚀</div>
+      <div style="font-size:12px;color:#94A3B8;margin-bottom:16px">Returns since recommendation</div>
+      {rows_html}
+      <div style="font-size:10px;color:#64748B;margin-top:14px;text-align:center">⚠️ Past returns ≠ future performance</div>
+    </div>
+    """, height=480, scrolling=False)
+
+    caption2 = ("🚀 My Top BUY Calls — Q4 FY26\n\n"
+                + "\n".join(f"{'✅' if r['ret_pct']>=0 else '❌'} #{r['name'].replace(' ','')}: {r['ret_pct']*100:+.1f}%" for r in top8)
+                + f"\n\nHit rate: {hit_rate:.0f}% | ~4 week hold\n"
+                f"nse-watchlist-james.streamlit.app\n\n"
+                f"#NSEIndia #StockMarket #ResultsSeason #IndianStocks #thathumanfrommars")
+    st.code(caption2, language=None)
+    st.markdown("👆 Copy caption above | Screenshot the card | Post on Instagram")
+
+    st.markdown("---")
+
+    # ── Card 3: Sector Beat Rate ──────────────────────────────────────────────
+    st.markdown("### 📊 Sector Beat Rate")
+    sb={}
+    for s in declared:
+        if s.get("act_eps") and s.get("est_eps"):
+            sec=s["sector"].split("(")[0].strip().split("/")[0].strip()[:20]
+            sb.setdefault(sec,{"beats":0,"total":0})
+            sb[sec]["total"]+=1
+            if s["act_eps"]>s["est_eps"]: sb[sec]["beats"]+=1
+    top_s=sorted(sb.items(),key=lambda x:-x[1]["beats"]/max(x[1]["total"],1))[:6]
+    sec_html="".join(f"""
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:12px;font-weight:500">{sec}</span>
+          <span style="font-size:12px;font-weight:700;color:{"#4ADE80" if d["beats"]/d["total"]>=0.7 else "#FBBF24" if d["beats"]/d["total"]>=0.5 else "#F87171"}">{d["beats"]/d["total"]*100:.0f}%</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);border-radius:999px;height:7px">
+          <div style="background:{"#4ADE80" if d["beats"]/d["total"]>=0.7 else "#FBBF24" if d["beats"]/d["total"]>=0.5 else "#F87171"};width:{d["beats"]/d["total"]*100:.0f}%;height:7px;border-radius:999px"></div>
+        </div>
+        <span style="font-size:10px;color:#94A3B8">{d["beats"]}/{d["total"]} beat</span>
+      </div>""" for sec,d in top_s)
+
+    components.html(f"""
+    <div style="background:linear-gradient(135deg,#0D1B2A,#2D1B5C);
+                border-radius:20px;padding:26px;color:white;max-width:480px;font-family:Arial,sans-serif">
+      <div style="font-size:12px;color:#94A3B8;margin-bottom:6px">@that_human_from_mars | Q4 FY26</div>
+      <div style="font-size:22px;font-weight:700;margin-bottom:4px">Sector Beat Rate 📊</div>
+      <div style="font-size:12px;color:#94A3B8;margin-bottom:16px">Which sectors crushed estimates?</div>
+      {sec_html}
+      <div style="font-size:10px;color:#64748B;margin-top:8px;text-align:center">{len(beats)}/{len(declared)} companies beat estimates overall</div>
+    </div>
+    """, height=450, scrolling=False)
+
+    caption3=("📊 Q4 FY26 Sector Beat Rate\n\n"
+              +"\n".join(f"{'🟢' if d['beats']/d['total']>=0.7 else '🟡' if d['beats']/d['total']>=0.5 else '🔴'} {sec}: {d['beats']/d['total']*100:.0f}%" for sec,d in top_s)
+              +f"\n\n{len(beats)}/{len(declared)} companies beat estimates\n"
+              f"#Q4FY26Results #NSE #SectorAnalysis #IndianStocks #thathumanfrommars")
+    st.code(caption3, language=None)
+    st.markdown("👆 Copy caption above | Screenshot the card | Post on Instagram")
+
+    st.markdown("---")
+
+    # ── Card 4: Custom stock post ─────────────────────────────────────────────
+    st.markdown("### ✍️ Custom Stock Post")
+    stock_name=st.selectbox("Pick a declared stock",
+                             [s["name"] for s in STOCKS if s["status"]=="Declared"])
+    stk=next((x for x in STOCKS if x["name"]==stock_name), None)
+    if stk:
+        eps_b_val=""
+        if stk.get("act_eps") and stk.get("est_eps") and stk["est_eps"]!=0:
+            b=(stk["act_eps"]-stk["est_eps"])/abs(stk["est_eps"])*100
+            eps_b_val=f"\nEPS: ₹{stk['act_eps']:.2f} vs est ₹{stk['est_eps']:.2f} ({b:+.1f}% {'✅ BEAT' if b>0 else '❌ MISS'})"
+        icon="🟢" if stk["ind_rating"] in ("STRONG BUY","BUY","ACCUMULATE") else "🟡" if stk["ind_rating"]=="HOLD" else "🔴"
+        custom=(f"{icon} #{stock_name.replace(' ','')} Q4 FY26{eps_b_val}\n\n"
+                f"My Rating: {stk['ind_rating']} | Risk: {stk['risk']}\n\n"
+                f"📌 {stk.get('catalyst','')[:150]}\n\n"
+                f"Full analysis 👇 nse-watchlist-james.streamlit.app\n\n"
+                f"#NSE #{stock_name.replace(' ','')} #Q4Results #StockAnalysis #thathumanfrommars")
+        st.code(custom, language=None)
+        wa_url="https://wa.me/?text="+urllib.parse.quote(custom)
+        st.markdown(f'<a href="{wa_url}" target="_blank" style="background:#25D366;color:white;padding:8px 20px;border-radius:6px;text-decoration:none;font-weight:600">📲 Share via WhatsApp</a>', unsafe_allow_html=True)
+
 elif page == "⚙️ Live Prices":
     st.markdown("## ⚙️ Live Prices")
     st.caption("Yahoo Finance (NSE). ~15 min delay.")
