@@ -26,6 +26,13 @@ except ImportError:
     print("pip install yfinance requests pandas")
     sys.exit(1)
 
+try:
+    from alerts import alert_new_stocks, alert_results_declared, alert_daily_summary
+except ImportError:
+    def alert_new_stocks(*a): pass
+    def alert_results_declared(*a): pass
+    def alert_daily_summary(*a): pass
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s  %(message)s",
@@ -509,6 +516,27 @@ def main():
     logging.info(f"   {stocks_added} new stocks added")
 
     # ── PUSH IF CHANGES ───────────────────────────────────────────────────────
+    # Send alerts first
+    pending_count  = content.count('"status":       "Pending"')
+    declared_count = content.count('"status":       "Declared"')
+
+    if actuals_changed > 0:
+        updated_list = [{"name": n, "act_eps": None, "est_eps": None,
+                         "act_rev": None, "est_rev": None}
+                        for n in re.findall(r'"name"\s*:\s*"([^"]+)"', content)[:actuals_changed]]
+        alert_results_declared(updated_list)
+
+    if stocks_added > 0:
+        new_list = []
+        for sym in list(seen)[-stocks_added:]:
+            new_list.append({"name": sym, "sector": "Auto-discovered",
+                             "result_date": "See watchlist",
+                             "ind_rating": "HOLD", "risk": "MEDIUM",
+                             "catalyst": "Auto-added — update commentary manually."})
+        alert_new_stocks(new_list)
+
+    alert_daily_summary(actuals_changed, stocks_added, pending_count, declared_count)
+
     if total_changes > 0:
         commit_msg = (
             f"Auto-update {datetime.now().strftime('%d-%b-%Y')}: "
@@ -519,8 +547,6 @@ def main():
             logging.info(f"\n🎉 Done! {total_changes} total changes pushed.")
             logging.info("📊 Dashboard refreshes within 60 seconds.")
         else:
-            # When running via GitHub Actions, git push is handled by workflow
-            # Just write the file locally
             Path(DATA_FILE).write_text(content, encoding="utf-8")
             logging.info(f"\n✅ data.py updated locally — git will commit via workflow.")
     else:
@@ -528,3 +554,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ── ALERT INTEGRATION (add to bottom of main()) ──────────────────────────────
+# This is called from main() after updates are complete.
+# Already wired in — see updated main() below.
