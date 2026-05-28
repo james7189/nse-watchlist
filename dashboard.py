@@ -134,6 +134,25 @@ def share_text(s):
             f"📌 {s.get('catalyst','')[:100]}\n\n"
             f"🔗 https://nse-watchlist-that_human_from_mars.streamlit.app")
 
+def pe_warning(pe):
+    try: pe = int(pe) if pe else None
+    except: pe = None
+    if pe is None: return "", ""
+    if pe > 55:   return "🔴", f"{pe}x — Very expensive. Any miss = sharp fall."
+    if pe > 35:   return "⚠️", f"{pe}x — Expensive. Needs strong growth delivery."
+    if pe > 20:   return "🟡", f"{pe}x — Fairly valued."
+    return "✅", f"{pe}x — Reasonable valuation."
+
+def pe_badge(pe):
+    try: pe = int(pe) if pe else None
+    except: pe = None
+    if pe is None: return ""
+    if pe > 55:   bg,col,label = "FDDCDC","C0392B",f"🔴 {pe}x VERY EXP"
+    elif pe > 35: bg,col,label = "FFF3E0","E65100",f"⚠️ {pe}x EXPENSIVE"
+    elif pe > 20: bg,col,label = "FFF3CD","856404",f"🟡 {pe}x FAIR"
+    else:         bg,col,label = "D8F3DC","1B4332",f"✅ {pe}x CHEAP"
+    return f'<span style="background:#{bg};color:#{col};padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700">{label}</span>'
+
 TODAY = date.today()
 
 # Returns data
