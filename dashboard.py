@@ -403,6 +403,8 @@ elif page == "📈 Pre-Result Setup":
             c2.metric("Est. Rev",f"₹{s.get('est_rev','—'):,}Cr" if s.get('est_rev') else "—")
             c3.metric("SS Target",f"₹{s.get('ss_target','—')}")
             c4.metric("Score",f"{score}/10")
+            rat_bg  = RATING_BG.get(s["ind_rating"],"#F3F4F6")
+            rat_col = RATING_COLORS.get(s["ind_rating"],"#374151")
             st.markdown(f'<span style="background:{rat_bg};color:{rat_col};font-weight:700;padding:4px 14px;border-radius:999px;font-size:13px">MY RATING: {s["ind_rating"]}</span> ' + pe_badge(s.get("pe_ratio")), unsafe_allow_html=True)
             st.markdown("**📌 Catalyst**")
             st.markdown(f'<div class="commentary-box">{s.get("catalyst","—")}</div>', unsafe_allow_html=True)
