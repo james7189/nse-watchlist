@@ -846,9 +846,11 @@ elif page == "📸 Instagram Export":
               <span style="font-weight:700;font-size:18px;color:{color}">{r['ret_pct']*100:+.1f}%</span>
             </div>"""
 
-        st.markdown(f"""
+        import streamlit.components.v1 as components
+        components.html(f"""
         <div style="background:linear-gradient(135deg,#0D1B2A,#1A3A5C);
-                    border-radius:20px;padding:28px;color:white;max-width:500px">
+                    border-radius:20px;padding:28px;color:white;max-width:500px;
+                    font-family:Inter,sans-serif">
           <div style="font-size:12px;color:#94A3B8;letter-spacing:2px;margin-bottom:4px">
             @that_human_from_mars | Q4 FY26
           </div>
@@ -861,7 +863,7 @@ elif page == "📸 Instagram Export":
             ⚠️ Past returns ≠ future performance. Not SEBI advice.
           </div>
         </div>
-        """, unsafe_allow_html=True)
+        """, height=500, scrolling=True)
 
         caption_2=(
             f"🚀 My Top BUY Calls — Q4 FY26 Results Season\n\n"
@@ -902,9 +904,10 @@ elif page == "📸 Instagram Export":
               <span style="font-size:11px;color:#94A3B8">{data['beats']}/{data['total']} beat</span>
             </div>"""
 
-        st.markdown(f"""
+        components.html(f"""
         <div style="background:linear-gradient(135deg,#0D1B2A,#2D1B5C);
-                    border-radius:20px;padding:28px;color:white;max-width:500px">
+                    border-radius:20px;padding:28px;color:white;max-width:500px;
+                    font-family:Inter,sans-serif">
           <div style="font-size:12px;color:#94A3B8;letter-spacing:2px;margin-bottom:4px">
             @that_human_from_mars | Q4 FY26
           </div>
@@ -917,7 +920,7 @@ elif page == "📸 Instagram Export":
             {len(beats)}/{len(declared)} stocks beat estimates overall
           </div>
         </div>
-        """, unsafe_allow_html=True)
+        """, height=500, scrolling=True)
 
         caption_3=(
             f"📊 Q4 FY26: Which Sectors Crushed Estimates?\n\n"
