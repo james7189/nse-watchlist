@@ -256,17 +256,22 @@ def alert_results_declared(updated_stocks: list):
             rb = (act_rev - est_rev) / abs(est_rev) * 100
             rev_beat = f"<br><small style='color:{'#40916C' if rb>0 else '#C0392B'}'>{rb:+.1f}%</small>"
 
+        act_rev_str = f"₹{act_rev:,}Cr" if act_rev else "—"
+        est_rev_str = f"₹{est_rev:,}Cr" if est_rev else "—"
+        act_eps_str = f"₹{act_eps}" if act_eps else "—"
+        est_eps_str = f"₹{est_eps}" if est_eps else "—"
+
         rows_html += f"""
         <tr>
           <td style="padding:10px;border-bottom:1px solid #eee;font-weight:600">{s['name']}</td>
-          <td style="padding:10px;border-bottom:1px solid #eee;color:#555">₹{est_eps}</td>
-          <td style="padding:10px;border-bottom:1px solid #eee;font-weight:700">₹{act_eps}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;color:#555">{est_eps_str}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;font-weight:700">{act_eps_str}</td>
           <td style="padding:10px;border-bottom:1px solid #eee">
             <span style="background:{beat_bg};color:{beat_col};padding:3px 8px;
                          border-radius:4px;font-weight:700">{beat_pct}</span>
           </td>
           <td style="padding:10px;border-bottom:1px solid #eee">
-            ₹{act_rev:,}Cr{rev_beat} vs est ₹{est_rev:,}Cr
+            {act_rev_str}{rev_beat} vs est {est_rev_str}
           </td>
         </tr>"""
 
