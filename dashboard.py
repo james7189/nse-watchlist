@@ -65,7 +65,7 @@ st.markdown(f"""
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("## 📊 NSE Watchlist\n**Q4 FY26**")
-    st.caption(f"James | {datetime.now().strftime('%d %b %Y')}")
+    st.caption(f"that_human_from_mars | {datetime.now().strftime('%d %b %Y')}")
     if st.toggle("🌙 Dark Mode", value=st.session_state.dark):
         st.session_state.dark = True; st.rerun()
     else:
@@ -132,7 +132,7 @@ def share_text(s):
             f"My Rating: *{s['ind_rating']}* | Risk: {s['risk']}\n"
             f"{s['ind_rationale'][:120]}...\n\n"
             f"📌 {s.get('catalyst','')[:100]}\n\n"
-            f"🔗 https://nse-watchlist-james.streamlit.app")
+            f"🔗 https://nse-watchlist-that_human_from_mars.streamlit.app")
 
 TODAY = date.today()
 
@@ -220,7 +220,7 @@ def get_returns():
 # ─────────────────────────────────────────────────────────────────────────────
 if page == "🏠 Dashboard":
     st.markdown("# 📊 NSE Results Watchlist — Q4 FY26")
-    st.caption(f"James's personal tracker | {len(STOCKS)} stocks | {datetime.now().strftime('%d %b %Y %H:%M')}")
+    st.caption(f"that_human_from_mars's personal tracker | {len(STOCKS)} stocks | {datetime.now().strftime('%d %b %Y %H:%M')}")
 
     declared=[s for s in STOCKS if s["status"]=="Declared"]
     pending =[s for s in STOCKS if s["status"]=="Pending"]
@@ -403,7 +403,7 @@ elif page == "📈 Pre-Result Setup":
             c2.metric("Est. Rev",f"₹{s.get('est_rev','—'):,}Cr" if s.get('est_rev') else "—")
             c3.metric("SS Target",f"₹{s.get('ss_target','—')}")
             c4.metric("Score",f"{score}/10")
-            st.markdown(f'<span style="background:{rat_bg};color:{rat_col};font-weight:700;padding:4px 14px;border-radius:999px;font-size:13px">MY RATING: {s["ind_rating"]}</span>', unsafe_allow_html=True)
+            st.markdown(f'<span style="background:{rat_bg};color:{rat_col};font-weight:700;padding:4px 14px;border-radius:999px;font-size:13px">MY RATING: {s["ind_rating"]}</span> ' + pe_badge(s.get("pe_ratio")), unsafe_allow_html=True)
             st.markdown("**📌 Catalyst**")
             st.markdown(f'<div class="commentary-box">{s.get("catalyst","—")}</div>', unsafe_allow_html=True)
             st.markdown("**🔍 Rationale**")
@@ -438,7 +438,7 @@ elif page == "🎯 Post-Result Tracker":
             c3.metric("Est. Rev",f"₹{s.get('est_rev','—'):,}Cr" if s.get('est_rev') else "—")
             c4.metric("Act. Rev",f"₹{s.get('act_rev','—'):,}Cr" if s.get('act_rev') else "—",f"{rev_b:+.1f}%" if rev_b else None)
             c5.metric("Upside",s.get("upside_captured") or "—")
-            st.markdown(rb(s["ind_rating"],13), unsafe_allow_html=True)
+            st.markdown(rb(s["ind_rating"],13) + "  " + pe_badge(s.get("pe_ratio")), unsafe_allow_html=True)
             st.markdown("**📢 Earnings Commentary**")
             st.markdown(f'<div class="commentary-box">{s.get("earnings_commentary","—")}</div>', unsafe_allow_html=True)
             st.markdown("**⚖️ Independent View**")
@@ -675,12 +675,28 @@ elif page == "🔬 Stock Deep Dive":
 
     with col_b:
         st.markdown("#### 🎯 My Assessment")
+        pe_val  = s.get("pe_ratio", "—")
+        pe_flag = pe_warning(s.get("pe_ratio"))[0] if s.get("pe_ratio") else ""
         st.markdown(f"""| | |
 |--|--|
 | Rating | **{s['ind_rating']}** |
 | Risk | **{s['risk']}** |
 | Score | **{watchlist_score(s)}/10** |
+| P/E | **{pe_val}x** {pe_flag} |
 | Upside Captured | **{s.get('upside_captured') or '—'}** |""")
+    # PE warning box
+    pe = s.get("pe_ratio")
+    if pe and pe > 35:
+        flag, msg = pe_warning(pe)
+        warn_color = "#C0392B" if pe > 55 else "#E65100"
+        warn_bg    = "#FDDCDC" if pe > 55 else "#FFF3E0"
+        st.markdown(
+            f'<div style="background:{warn_bg};border-left:4px solid {warn_color};'
+            f'padding:10px 14px;border-radius:0 8px 8px 0;margin-top:8px">'
+            f'<b>{flag} PE Warning:</b> {msg}<br>'
+            f'<small style="color:#666">High PE stocks need perfect execution. '
+            f'Any earnings miss causes sharp corrections.</small>'
+            f'</div>', unsafe_allow_html=True)
 
     st.markdown("#### 📢 Earnings Commentary")
     st.markdown(f'<div class="commentary-box">{s.get("earnings_commentary","—")}</div>', unsafe_allow_html=True)
@@ -808,7 +824,7 @@ elif page == "📸 Instagram Export":
             f"🎯 Hit rate: {hit_rate:.0f}% of BUY calls positive\n"
             f"🏆 Best call: {top5[0]['name'] if top5 else '—'} ({top5[0]['ret_pct']*100:+.1f}% if top5 else '')\n\n"
             f"Full watchlist & analysis 👇\n"
-            f"🔗 nse-watchlist-james.streamlit.app\n\n"
+            f"🔗 nse-watchlist-that_human_from_mars.streamlit.app\n\n"
             f"#StockMarket #Investing #NSE #Q4Results #PersonalFinance "
             f"#IndianStocks #ResultsSeason #StockAnalysis #thathumanfrommars"
         )
@@ -852,7 +868,7 @@ elif page == "📸 Instagram Export":
             +"\n".join(f"{'✅' if r['ret_pct']>=0 else '❌'} #{r['name'].replace(' ','')}: {r['ret_pct']*100:+.1f}%" for r in top8)
             +f"\n\nHit rate: {hit_rate:.0f}% | ~4 week holding period\n\n"
             f"I track 84 stocks every results season with independent ratings.\n"
-            f"Full dashboard 👇 nse-watchlist-james.streamlit.app\n\n"
+            f"Full dashboard 👇 nse-watchlist-that_human_from_mars.streamlit.app\n\n"
             f"#StockMarket #NSEIndia #BuyStocks #ResultsSeason "
             f"#StockAnalysis #IndianStocks #Investing #PersonalFinance"
         )
@@ -930,7 +946,7 @@ elif page == "📸 Instagram Export":
                 f"{eps_b}\n\n"
                 f"My Rating: {stock['ind_rating']} | Risk: {stock['risk']}\n\n"
                 f"📌 {stock.get('catalyst','')[:150]}\n\n"
-                f"Full analysis 👇 nse-watchlist-james.streamlit.app\n\n"
+                f"Full analysis 👇 nse-watchlist-that_human_from_mars.streamlit.app\n\n"
                 f"#NSE #{stock_name.replace(' ','')} #Q4Results #StockAnalysis "
                 f"#IndianStocks #PersonalFinance #thathumanfrommars"
             )
