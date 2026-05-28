@@ -132,7 +132,7 @@ def share_text(s):
             f"My Rating: *{s['ind_rating']}* | Risk: {s['risk']}\n"
             f"{s['ind_rationale'][:120]}...\n\n"
             f"📌 {s.get('catalyst','')[:100]}\n\n"
-            f"🔗 https://nse-watchlist-that_human_from_mars.streamlit.app")
+            f"🔗 https://nse-watchlist-thathumanfrommars.streamlit.app")
 
 def pe_warning(pe):
     try: pe = int(pe) if pe else None
@@ -830,12 +830,14 @@ elif page == "📸 Instagram Export":
     </div>
     """, height=420, scrolling=False)
 
+    best_name = top5[0]['name'].replace(' ','') if top5 else '—'
+    best_ret  = f"{top5[0]['ret_pct']*100:+.1f}%" if top5 else '—'
     caption1 = (f"📊 Q4 FY26 Season Report\n\n"
                 f"✅ {len(declared)} results tracked\n"
                 f"📈 Avg return: {portfolio_ret:+.1f}% in ~4 weeks\n"
                 f"🎯 Hit rate: {hit_rate:.0f}%\n"
-                f"🏆 Best call: #{(top5[0]['name'] if top5 else '').replace(' ','')} ({top5[0]['ret_pct']*100:+.1f}% if top5 else '')\n\n"
-                f"Full analysis 👇 nse-watchlist-james.streamlit.app\n\n"
+                f"🏆 Best call: #{(top5[0]['name'] if top5 else '').replace(' ','')} {best_ret}\n\n"
+                f"Full analysis 👇 nse-watchlist-thathumanfrommars.streamlit.app\n\n"
                 f"#StockMarket #NSE #Q4Results #PersonalFinance #IndianStocks #thathumanfrommars")
     st.code(caption1, language=None)
     st.markdown("👆 Copy caption above | Screenshot the card | Post on Instagram")
@@ -867,7 +869,7 @@ elif page == "📸 Instagram Export":
     caption2 = ("🚀 My Top BUY Calls — Q4 FY26\n\n"
                 + "\n".join(f"{'✅' if r['ret_pct']>=0 else '❌'} #{r['name'].replace(' ','')}: {r['ret_pct']*100:+.1f}%" for r in top8)
                 + f"\n\nHit rate: {hit_rate:.0f}% | ~4 week hold\n"
-                f"nse-watchlist-james.streamlit.app\n\n"
+                f"nse-watchlist-thathumanfrommars.streamlit.app\n\n"
                 f"#NSEIndia #StockMarket #ResultsSeason #IndianStocks #thathumanfrommars")
     st.code(caption2, language=None)
     st.markdown("👆 Copy caption above | Screenshot the card | Post on Instagram")
@@ -930,7 +932,7 @@ elif page == "📸 Instagram Export":
         custom=(f"{icon} #{stock_name.replace(' ','')} Q4 FY26{eps_b_val}\n\n"
                 f"My Rating: {stk['ind_rating']} | Risk: {stk['risk']}\n\n"
                 f"📌 {stk.get('catalyst','')[:150]}\n\n"
-                f"Full analysis 👇 nse-watchlist-james.streamlit.app\n\n"
+                f"Full analysis 👇 nse-watchlist-thathumanfrommars.streamlit.app\n\n"
                 f"#NSE #{stock_name.replace(' ','')} #Q4Results #StockAnalysis #thathumanfrommars")
         st.code(custom, language=None)
         wa_url="https://wa.me/?text="+urllib.parse.quote(custom)
